@@ -23,8 +23,19 @@ export default function OrderStatusModal({ orders, onClose, onPay, onAutoMarkRea
 
   if (!orders) return null;
 
-  const allDelivered = orders.items.every((item) => item.status === 'delivered');
-  const totalUnpaid = orders.orders.reduce((sum, order) => !order.paid ? sum + order.total_price : sum, 0);
+  const totalUnpaid = orders.orders.reduce((sum, order) => (
+    !order.paid ? sum + Number(order.total_price || 0) : sum
+  ), 0);
+  const unpaidOrderIds = useMemo(
+    () => new Set(orders.orders.filter((order) => !order.paid).map((order) => String(order.id))),
+    [orders.orders]
+  );
+  const unpaidItems = useMemo(
+    () => orders.items.filter((item) => unpaidOrderIds.has(String(item.order_id))),
+    [orders.items, unpaidOrderIds]
+  );
+  const unpaidItemsDelivered = unpaidItems.length > 0 && unpaidItems.every((item) => item.status === 'delivered');
+  const hasUnpaidReadyForPayment = unpaidItemsDelivered && totalUnpaid > 0;
 
   useEffect(() => {
     setPaymentAmount(String(totalUnpaid));
@@ -89,7 +100,7 @@ export default function OrderStatusModal({ orders, onClose, onPay, onAutoMarkRea
       const orderId = item.order_id;
       if (!groups[orderId]) {
         groups[orderId] = {
-          order: orders.orders.find((order) => order.id === orderId),
+          order: orders.orders.find((order) => String(order.id) === String(orderId)),
           items: []
         };
       }
@@ -107,6 +118,39 @@ export default function OrderStatusModal({ orders, onClose, onPay, onAutoMarkRea
   }, [orders.items]);
 
   const getStatusConfig = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+
+  const paymentPanel = hasUnpaidReadyForPayment && (
+    <div className="payment-panel payment-panel-ready">
+      <div className="payment-panel-header">
+        <div>
+          <h4>Ready to Pay</h4>
+          <p>{unpaidItems.length} delivered item{unpaidItems.length !== 1 ? 's' : ''} awaiting payment</p>
+        </div>
+        <span className="payment-due">{currency(totalUnpaid)}</span>
+      </div>
+      <div className="payment-form">
+        <div className="form-row">
+          <label>Phone Number</label>
+          <input
+            type="text"
+            value={paymentPhoneNumber}
+            onChange={(event) => setPaymentPhoneNumber(event.target.value)}
+            placeholder="Enter phone number for mobile payment"
+          />
+        </div>
+        <div className="form-row">
+          <label>Amount</label>
+          <input type="number" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} readOnly />
+        </div>
+        <div className="payment-actions">
+          <button className="secondary-button" onClick={onClose}>Close</button>
+          <button className="primary-button pay-button" onClick={handlePayment} disabled={loading}>
+            {loading ? 'Processing...' : 'Pay Now'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="modal-backdrop order-status-backdrop" onClick={onClose}>
@@ -160,6 +204,8 @@ export default function OrderStatusModal({ orders, onClose, onPay, onAutoMarkRea
           </div>
         </div>
 
+        {paymentPanel}
+
         {orders.orders.length > 0 && (
           <div className="orders-summary-row">
             {orders.orders.map((order) => (
@@ -181,7 +227,7 @@ export default function OrderStatusModal({ orders, onClose, onPay, onAutoMarkRea
                   <span className={`status-dot ${order.status}`}></span>
                   {order.status}
                   <span className="meta-divider">-</span>
-                  {groupedItems[order.id]?.items.length || 0} items
+                  {groupedItems[String(order.id)]?.items.length || 0} items
                 </div>
               </div>
             ))}
@@ -231,7 +277,7 @@ export default function OrderStatusModal({ orders, onClose, onPay, onAutoMarkRea
               {filteredItems.map((item) => {
                 const config = getStatusConfig(item.status);
                 const remaining = getTimeRemaining(item);
-                const order = orders.orders.find((row) => row.id === item.order_id);
+                const order = orders.orders.find((row) => String(row.id) === String(item.order_id));
                 return (
                   <div key={item.id} className="flat-item-row">
                     <div className="flat-item-info">
@@ -254,39 +300,9 @@ export default function OrderStatusModal({ orders, onClose, onPay, onAutoMarkRea
           )}
         </div>
 
-        {allDelivered && totalUnpaid > 0 && (
-          <div className="payment-panel">
-            <div className="payment-panel-header">
-              <h4>Complete Payment</h4>
-              <span className="payment-due">{currency(totalUnpaid)}</span>
-            </div>
-            <div className="payment-form">
-              <div className="form-row">
-                <label>Phone Number</label>
-                <input
-                  type="text"
-                  value={paymentPhoneNumber}
-                  onChange={(event) => setPaymentPhoneNumber(event.target.value)}
-                  placeholder="Enter phone number for mobile payment"
-                />
-              </div>
-              <div className="form-row">
-                <label>Amount</label>
-                <input type="number" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} readOnly />
-              </div>
-              <div className="payment-actions">
-                <button className="secondary-button" onClick={onClose}>Close</button>
-                <button className="primary-button pay-button" onClick={handlePayment} disabled={loading}>
-                  {loading ? 'Processing...' : 'Pay Now'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!allDelivered && (
+        {totalUnpaid > 0 && !unpaidItemsDelivered && (
           <div className="waiting-panel">
-            <span>Waiting for items to be delivered...</span>
+            <span>Waiting for unpaid items to be delivered before payment...</span>
           </div>
         )}
       </div>

@@ -84,7 +84,7 @@ router.get('/all', async (req, res) => {
   const { type, status } = req.query;
 
   try {
-    let sql = `SELECT oi.id AS item_id, oi.order_id, oi.quantity, oi.status, oi.ready_time, oi.delivered_at,
+    let sql = `SELECT oi.id AS item_id, oi.order_id, oi.quantity, oi.status, oi.ready_time, oi.ready_at, oi.delivered_at,
                       o.customer_code, o.table_no, o.total_price, o.status AS order_status, o.paid,
                       m.id AS menu_id, m.name, m.type, m.price AS item_price
                FROM order_items oi

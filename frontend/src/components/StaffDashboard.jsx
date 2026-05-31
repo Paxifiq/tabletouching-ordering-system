@@ -241,6 +241,16 @@ export default function StaffDashboard({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const getPreparationState = (item) => {
+    if (item.status !== 'pending' || !item.ready_at) return null;
+    const due = new Date(item.ready_at);
+    const remaining = due - new Date();
+    return {
+      isReady: remaining <= 0,
+      label: remaining <= 0 ? 'Time up' : formatCountdown(item.ready_at)
+    };
+  };
+
   const renderButtons = (item) => {
     const buttons = [];
     if (user.role === 'cook' && item.type === 'food') {
@@ -435,6 +445,11 @@ export default function StaffDashboard({
                       <div className="station-meta-row">
                         <span className="status-tag">{item.status}</span>
                         <span>Qty: {item.quantity}</span>
+                        {getPreparationState(item) && (
+                          <span className={`station-countdown ${getPreparationState(item).isReady ? 'ready' : ''}`}>
+                            {getPreparationState(item).label}
+                          </span>
+                        )}
                       </div>
                     </div>
                     {renderButtons(item)}

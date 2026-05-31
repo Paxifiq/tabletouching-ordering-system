@@ -950,6 +950,130 @@ button {
   background: #64748b;
 }
 
+.order-status-modal .payment-panel-ready {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: 0 0 20px;
+  padding: 20px;
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(21, 84, 223, 0.96) 0%, rgba(15, 118, 110, 0.96) 62%, rgba(255, 123, 36, 0.96) 100%);
+  border: 0;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
+}
+
+.order-status-modal .payment-panel-ready .payment-panel-header {
+  margin-bottom: 16px;
+}
+
+.order-status-modal .payment-panel-ready h4,
+.order-status-modal .payment-panel-ready p {
+  margin: 0;
+  color: #ffffff;
+}
+
+.order-status-modal .payment-panel-ready h4 {
+  font-size: 1.15rem;
+}
+
+.order-status-modal .payment-panel-ready p {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+}
+
+.order-status-modal .payment-panel-ready .payment-due {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.order-status-modal .payment-panel-ready .payment-form {
+  grid-template-columns: minmax(180px, 1fr) minmax(130px, 0.5fr) auto;
+  align-items: end;
+}
+
+.order-status-modal .payment-panel-ready .form-row {
+  gap: 8px;
+}
+
+.order-status-modal .payment-panel-ready label {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.order-status-modal .payment-panel-ready input {
+  min-height: 48px;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 14px;
+}
+
+.order-status-modal .payment-panel-ready .payment-actions {
+  flex-wrap: nowrap;
+}
+
+.order-status-modal .payment-panel-ready .secondary-button {
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.order-status-modal .payment-panel-ready .pay-button {
+  min-height: 48px;
+  background: #ff7b24;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
+  white-space: nowrap;
+}
+
+.order-status-modal .payment-panel-ready .pay-button:hover {
+  background: #f55b00;
+}
+
+.order-status-modal .payment-badge.paid {
+  background: rgba(20, 184, 166, 0.12);
+  color: #047857;
+}
+
+.order-status-modal .payment-badge.unpaid {
+  background: rgba(255, 123, 36, 0.15);
+  color: #c2410c;
+}
+
+.order-status-modal .item-status-badge {
+  background: #eef5ff !important;
+  color: #0b4fd6 !important;
+}
+
+.order-status-modal .status-dot.delivered {
+  background: #14b8a6;
+}
+
+.order-status-modal .status-dot.ready {
+  background: #ff7b24;
+}
+
+@media (max-width: 760px) {
+  .order-status-modal .payment-panel-ready {
+    position: static;
+  }
+
+  .order-status-modal .payment-panel-ready .payment-form {
+    grid-template-columns: 1fr;
+  }
+
+  .order-status-modal .payment-panel-ready .payment-actions {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 980px) {
   .hero-bar,
   .cart-sidebar,
@@ -3142,6 +3266,25 @@ button {
   color: #ffffff;
   font-size: 1.25rem;
   letter-spacing: 0.02em;
+}
+
+.station-countdown {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255, 123, 36, 0.18);
+  border: 1px solid rgba(255, 123, 36, 0.28);
+  color: #fed7aa;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.station-countdown.ready {
+  background: rgba(20, 184, 166, 0.16);
+  border-color: rgba(20, 184, 166, 0.26);
+  color: #99f6e4;
 }
 
 @media (max-width: 760px) {

@@ -5,89 +5,186 @@ import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
-const MOMO_BASE_URL = 'https://sandbox.momodeveloper.mtn.com';
-const MOMO_SUBSCRIPTION_KEY = process.env.MOMO_SUBSCRIPTION_KEY;
-const MOMO_API_USER = process.env.MOMO_API_USER;
-const MOMO_API_KEY = process.env.MOMO_API_KEY;
+const FLUTTERWAVE_API_URL = process.env.FLUTTERWAVE_API_URL || 'https://api.flutterwave.com/v3';
+const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
+const FLUTTERWAVE_CUSTOMER_EMAIL = process.env.FLUTTERWAVE_CUSTOMER_EMAIL || 'customer@tabletouch.local';
 
-// Get MoMo access token
-async function getMoMoToken() {
-  const credentials = Buffer.from(`${MOMO_API_USER}:${MOMO_API_KEY}`).toString('base64');
-  const response = await axios.post(
-    `${MOMO_BASE_URL}/collection/token/`,
-    {},
-    {
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Ocp-Apim-Subscription-Key': MOMO_SUBSCRIPTION_KEY,
-      },
-    }
-  );
-  return response.data.access_token;
+function getFlutterwaveHeaders() {
+  if (!FLUTTERWAVE_SECRET_KEY) {
+    const error = new Error('FLUTTERWAVE_SECRET_KEY is not configured');
+    error.status = 500;
+    throw error;
+  }
+
+  return {
+    Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+    'Content-Type': 'application/json',
+  };
 }
 
-// Initiate MoMo payment
+function buildTxRef(customerCode) {
+  return `TT-${customerCode}-${Date.now()}-${uuidv4().slice(0, 8)}`;
+}
+
+function getAuthorizationUrl(responseData) {
+  return responseData?.meta?.authorization?.redirect
+    || responseData?.data?.link
+    || responseData?.data?.redirect_url
+    || null;
+}
+
+function getFlutterwaveTransaction(responseData) {
+  const transaction = responseData?.data;
+  if (Array.isArray(transaction)) {
+    return transaction[0] || null;
+  }
+  return transaction || null;
+}
+
+function normalizeFlutterwaveStatus(status) {
+  return String(status || '').trim().toLowerCase();
+}
+
+function getFlutterwaveAmount(transaction) {
+  return Number(transaction?.amount ?? transaction?.charged_amount ?? transaction?.app_fee ?? 0);
+}
+
+function getFlutterwaveCurrency(transaction) {
+  return String(transaction?.currency || transaction?.charged_currency || '').trim().toUpperCase();
+}
+
+function getFlutterwaveTxRef(transaction) {
+  return transaction?.tx_ref || transaction?.txRef || transaction?.flw_ref || null;
+}
+
+async function recordSuccessfulPayment({ customer_code, phone_number, amount }) {
+  const [paymentResult] = await db.execute(
+    'INSERT INTO payments (customer_code, phone_number, amount) VALUES (?, ?, ?)',
+    [customer_code, phone_number, amount]
+  );
+  const [[summary]] = await db.query(
+    'SELECT IFNULL(SUM(amount),0) AS paid_amount FROM payments WHERE customer_code = ?',
+    [customer_code]
+  );
+  const [[orderSummary]] = await db.query(
+    'SELECT IFNULL(SUM(total_price),0) AS total_due FROM orders WHERE customer_code = ? AND paid = 0',
+    [customer_code]
+  );
+  const paidAmount = Number(summary.paid_amount || 0);
+  const totalDue = Number(orderSummary.total_due || 0);
+  const isPaid = paidAmount >= totalDue;
+  if (isPaid) {
+    await db.execute('UPDATE orders SET paid = 1 WHERE customer_code = ? AND paid = 0', [customer_code]);
+  }
+
+  return { paymentId: paymentResult.insertId, customer_code, paidAmount, totalDue, paid: isPaid };
+}
+
+// Initiate Flutterwave Rwanda MoMo payment
 router.post('/momo/request', async (req, res) => {
-  const { phone_number, amount, customer_code } = req.body;
+  const { phone_number, amount, customer_code, fullname, email } = req.body;
 
   if (!phone_number || !amount || !customer_code) {
     return res.status(400).json({ error: 'phone_number, amount, and customer_code are required' });
   }
 
   try {
-    const token = await getMoMoToken();
-    const referenceId = uuidv4();
-
-    await axios.post(
-      `${MOMO_BASE_URL}/collection/v1_0/requesttopay`,
-      {
-        amount: String(amount),
-        currency: 'EUR', // sandbox uses EUR
-        externalId: customer_code,
-        payer: {
-          partyIdType: 'MSISDN',
-          partyId: phone_number,
-        },
-        payerMessage: `Payment for order - Table ${customer_code}`,
-        payeeNote: `Order payment ${customer_code}`,
+    const txRef = buildTxRef(customer_code);
+    const payload = {
+      phone_number,
+      amount: Number(amount),
+      currency: 'RWF',
+      email: email || FLUTTERWAVE_CUSTOMER_EMAIL,
+      fullname: fullname || `Tabletouch ${customer_code}`,
+      tx_ref: txRef,
+      meta: {
+        customer_code,
       },
+    };
+
+    const response = await axios.post(
+      `${FLUTTERWAVE_API_URL}/charges?type=mobile_money_rwanda`,
+      payload,
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Ocp-Apim-Subscription-Key': MOMO_SUBSCRIPTION_KEY,
-          'X-Reference-Id': referenceId,
-          'X-Target-Environment': 'sandbox',
-          'Content-Type': 'application/json',
-        },
+        headers: getFlutterwaveHeaders(),
       }
     );
 
-    res.status(202).json({ referenceId, message: 'Payment request sent' });
+    res.status(202).json({
+      tx_ref: txRef,
+      status: response.data?.status,
+      message: response.data?.message || 'Payment request sent',
+      authorization_url: getAuthorizationUrl(response.data),
+      flutterwave: response.data,
+    });
   } catch (error) {
-    console.error('MoMo request failed:', error?.response?.data || error.message);
-    res.status(500).json({ error: 'MoMo payment request failed' });
+    console.error('Flutterwave MoMo request failed:', error?.response?.data || error.message);
+    res.status(error.status || 500).json({
+      error: 'Flutterwave MoMo payment request failed',
+      details: error?.response?.data?.message || error?.response?.data?.error || error.message,
+    });
   }
 });
 
-// Check MoMo payment status
-router.get('/momo/status/:referenceId', async (req, res) => {
-  const { referenceId } = req.params;
+// Verify Flutterwave MoMo payment status and record successful payments
+router.post('/momo/status/:txRef', async (req, res) => {
+  const { txRef } = req.params;
+  const { customer_code, phone_number, amount } = req.body;
+
+  if (!customer_code || !phone_number || !amount) {
+    return res.status(400).json({ error: 'customer_code, phone_number, and amount are required' });
+  }
+
   try {
-    const token = await getMoMoToken();
     const response = await axios.get(
-      `${MOMO_BASE_URL}/collection/v1_0/requesttopay/${referenceId}`,
+      `${FLUTTERWAVE_API_URL}/transactions/verify_by_reference`,
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Ocp-Apim-Subscription-Key': MOMO_SUBSCRIPTION_KEY,
-          'X-Target-Environment': 'sandbox',
-        },
+        headers: getFlutterwaveHeaders(),
+        params: { tx_ref: txRef },
       }
     );
-    res.json(response.data);
+
+    const transaction = getFlutterwaveTransaction(response.data);
+    const transactionStatus = normalizeFlutterwaveStatus(transaction?.status || response.data?.status);
+    const transactionCurrency = getFlutterwaveCurrency(transaction);
+    const transactionAmount = getFlutterwaveAmount(transaction);
+    const transactionTxRef = getFlutterwaveTxRef(transaction);
+    const verified = ['successful', 'success'].includes(transactionStatus)
+      && transactionCurrency === 'RWF'
+      && transactionAmount >= Number(amount)
+      && transactionTxRef === txRef;
+
+    if (!verified) {
+      return res.json({
+        tx_ref: txRef,
+        status: transactionStatus || 'pending',
+        verified: false,
+        verification: {
+          status: transactionStatus || null,
+          currency: transactionCurrency || null,
+          amount: transactionAmount || null,
+          tx_ref: transactionTxRef || null,
+          expected_amount: Number(amount),
+          expected_tx_ref: txRef,
+        },
+        flutterwave: response.data,
+      });
+    }
+
+    const payment = await recordSuccessfulPayment({ customer_code, phone_number, amount });
+    res.json({
+      ...payment,
+      tx_ref: txRef,
+      status: transactionStatus,
+      verified: true,
+      flutterwave: response.data,
+    });
   } catch (error) {
-    console.error('MoMo status check failed:', error?.response?.data || error.message);
-    res.status(500).json({ error: 'Could not check payment status' });
+    console.error('Flutterwave MoMo status check failed:', error?.response?.data || error.message);
+    res.status(500).json({
+      error: 'Could not verify Flutterwave payment status',
+      details: error?.response?.data?.message || error?.response?.data?.error || error.message,
+    });
   }
 });
 
@@ -98,25 +195,8 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'customer_code, phone_number, and amount are required' });
   }
   try {
-    const [paymentResult] = await db.execute(
-      'INSERT INTO payments (customer_code, phone_number, amount) VALUES (?, ?, ?)',
-      [customer_code, phone_number, amount]
-    );
-    const [[summary]] = await db.query(
-      'SELECT IFNULL(SUM(amount),0) AS paid_amount FROM payments WHERE customer_code = ?',
-      [customer_code]
-    );
-    const [[orderSummary]] = await db.query(
-      'SELECT IFNULL(SUM(total_price),0) AS total_due FROM orders WHERE customer_code = ? AND paid = 0',
-      [customer_code]
-    );
-    const paidAmount = Number(summary.paid_amount || 0);
-    const totalDue = Number(orderSummary.total_due || 0);
-    const isPaid = paidAmount >= totalDue;
-    if (isPaid) {
-      await db.execute('UPDATE orders SET paid = 1 WHERE customer_code = ? AND paid = 0', [customer_code]);
-    }
-    res.status(201).json({ paymentId: paymentResult.insertId, customer_code, paidAmount, totalDue, paid: isPaid });
+    const payment = await recordSuccessfulPayment({ customer_code, phone_number, amount });
+    res.status(201).json(payment);
   } catch (error) {
     console.error('Payment recording failed', error);
     res.status(500).json({ error: 'Unable to record payment' });

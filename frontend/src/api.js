@@ -8,6 +8,8 @@ export const fetchCustomerCodes = () => axios.get(`${API_BASE}/api/customer-code
 export const createOrder = (payload) => axios.post(`${API_BASE}/api/orders`, payload).then(res => res.data);
 export const fetchOrdersByCode = (customer_code) => axios.get(`${API_BASE}/api/orders`, { params: { customer_code } }).then(res => res.data);
 export const recordPayment = (payload) => axios.post(`${API_BASE}/api/payments`, payload).then(res => res.data);
+export const requestMomoPayment = (payload) => axios.post(`${API_BASE}/api/payments/momo/request`, payload).then(res => res.data);
+export const verifyMomoPayment = (txRef, payload) => axios.post(`${API_BASE}/api/payments/momo/status/${txRef}`, payload).then(res => res.data);
 export const fetchPayments = () => axios.get(`${API_BASE}/api/payments`).then(res => res.data);
 export const fetchReports = () => axios.get(`${API_BASE}/api/reports`).then(res => res.data);
 export const login = (payload) => axios.post(`${API_BASE}/api/auth/login`, payload).then(res => res.data);
