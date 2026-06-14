@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 24, 2026 at 07:20 PM
+-- Generation Time: Jun 06, 2026 at 05:08 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -40,10 +40,9 @@ CREATE TABLE `customer_codes` (
 --
 
 INSERT INTO `customer_codes` (`id`, `code`, `status`, `created_at`, `table_no`) VALUES
-(150, 'AU1C9SKY', '1', '2026-05-22 16:30:00', 1),
-(151, 'PX68E6CL', '1', '2026-05-22 19:32:39', 2),
-(152, '869C7OHJ', '1', '2026-05-24 10:19:17', 1),
-(153, 'Q9KBZ7LJ', '1', '2026-05-24 16:18:40', 4);
+(155, '11TSOKV6', '1', '2026-05-31 11:46:58', 4),
+(156, '2X4K779I', '1', '2026-05-31 11:55:15', 5),
+(157, 'Z9WVU1E4', '1', '2026-05-31 12:09:16', 6);
 
 -- --------------------------------------------------------
 
@@ -76,7 +75,7 @@ INSERT INTO `menu` (`id`, `name`, `image`, `description`, `price`, `type`) VALUE
 (22, 'Orange juice', '/api/uploads/1779466388702-741772603-Orange juice.jpg', 'Freshly squeezed orange juice', 4500.00, 'drink'),
 (23, 'Coffee', '/api/uploads/1779466447958-528870148-Coffee.jpg', 'Hot brewed coffee with cream and sugar', 3000.00, 'drink'),
 (24, 'Tea', '/api/uploads/1779466533091-328683070-Tea.jpg', 'Refreshing hot tea with lemon', 3000.00, 'drink'),
-(25, 'Nile Water', '/api/uploads/1779466645002-555708213-Nile.jpg', 'Pure and fresh Water', 1000.00, 'drink'),
+(25, 'Nile Water', '/api/uploads/1779466645002-555708213-Nile.jpg', 'Pure and fresh Water', 100.00, 'drink'),
 (26, 'Sushi', '/api/uploads/1779557935662-577206712-Sushi.jpg', 'This crispy deep-fried tempura roll is sure to delight—especially the crunchy grilled mushroom', 10000.00, 'food');
 
 -- --------------------------------------------------------
@@ -108,8 +107,13 @@ INSERT INTO `orders` (`id`, `customer_code`, `table_no`, `total_price`, `status`
 (12, 'FU8GETUK', 1, 7000.00, 'completed', '2026-05-20 17:57:33', 0),
 (13, 'AU1C9SKY', 1, 22000.00, 'completed', '2026-05-22 16:30:42', 1),
 (14, 'PX68E6CL', 1, 10500.00, 'completed', '2026-05-22 19:33:11', 1),
-(15, '869C7OHJ', 1, 22000.00, 'pending', '2026-05-24 10:23:02', 0),
-(16, 'Q9KBZ7LJ', 1, 22000.00, 'completed', '2026-05-24 16:18:57', 1);
+(15, '869C7OHJ', 1, 22000.00, 'completed', '2026-05-24 10:23:02', 0),
+(16, 'Q9KBZ7LJ', 1, 22000.00, 'completed', '2026-05-24 16:18:57', 1),
+(17, 'GIHYQSV7', 1, 7000.00, 'completed', '2026-05-31 11:11:33', 0),
+(18, 'GIHYQSV7', 1, 1.00, 'completed', '2026-05-31 11:15:47', 0),
+(19, '11TSOKV6', 1, 1.00, 'completed', '2026-05-31 11:47:14', 0),
+(20, '2X4K779I', 1, 100.00, 'completed', '2026-05-31 11:55:30', 1),
+(21, 'Z9WVU1E4', 1, 100.00, 'completed', '2026-05-31 12:09:34', 1);
 
 -- --------------------------------------------------------
 
@@ -147,10 +151,15 @@ INSERT INTO `order_items` (`id`, `order_id`, `menu_id`, `quantity`, `status`, `r
 (25, 13, 16, 1, 'delivered', 1, '2026-05-22 19:21:52', '2026-05-22 16:30:42', NULL),
 (26, 14, 14, 1, 'delivered', 1, '2026-05-22 19:36:26', '2026-05-22 19:33:11', NULL),
 (27, 14, 21, 1, 'delivered', 1, '2026-05-22 19:36:43', '2026-05-22 19:33:11', NULL),
-(28, 15, 16, 1, 'pending', 1, NULL, '2026-05-24 10:23:02', '2026-05-24 18:44:33'),
-(29, 15, 15, 1, 'pending', 1, NULL, '2026-05-24 10:23:02', '2026-05-24 18:34:37'),
+(28, 15, 16, 1, 'delivered', 1, '2026-05-31 12:25:59', '2026-05-24 10:23:02', NULL),
+(29, 15, 15, 1, 'delivered', 1, '2026-05-31 12:26:00', '2026-05-24 10:23:02', NULL),
 (30, 16, 16, 1, 'delivered', 1, '2026-05-24 16:43:27', '2026-05-24 16:18:57', NULL),
-(31, 16, 15, 1, 'delivered', 1, '2026-05-24 16:33:46', '2026-05-24 16:18:57', NULL);
+(31, 16, 15, 1, 'delivered', 1, '2026-05-24 16:33:46', '2026-05-24 16:18:57', NULL),
+(32, 17, 16, 1, 'delivered', 1, '2026-05-31 11:13:21', '2026-05-31 11:11:33', NULL),
+(33, 18, 25, 1, 'delivered', 1, '2026-05-31 11:32:48', '2026-05-31 11:15:47', NULL),
+(34, 19, 25, 1, 'delivered', 1, '2026-05-31 11:52:43', '2026-05-31 11:47:14', NULL),
+(35, 20, 25, 1, 'delivered', 1, '2026-05-31 11:58:08', '2026-05-31 11:55:30', NULL),
+(36, 21, 25, 1, 'delivered', 1, '2026-05-31 12:11:18', '2026-05-31 12:09:34', NULL);
 
 -- --------------------------------------------------------
 
@@ -173,7 +182,10 @@ CREATE TABLE `payments` (
 INSERT INTO `payments` (`id`, `customer_code`, `phone_number`, `amount`, `payment_date`) VALUES
 (1, 'AU1C9SKY ', '0783999892', 22000.00, '2026-05-22 19:22:08'),
 (2, 'PX68E6CL', '0783999892', 10500.00, '2026-05-22 19:37:26'),
-(3, 'Q9KBZ7LJ', '0783999892', 22000.00, '2026-05-24 16:44:25');
+(3, 'Q9KBZ7LJ', '0783999892', 22000.00, '2026-05-24 16:44:25'),
+(4, 'Z9WVU1E4', '0783999892', 100.00, '2026-05-31 12:19:37'),
+(5, '2X4K779I', '0783999892', 100.00, '2026-05-31 12:24:47'),
+(6, '2X4K779I', '0783999892', 100.00, '2026-05-31 12:24:48');
 
 -- --------------------------------------------------------
 
@@ -250,7 +262,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `customer_codes`
 --
 ALTER TABLE `customer_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=154;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=158;
 
 --
 -- AUTO_INCREMENT for table `menu`
@@ -262,19 +274,19 @@ ALTER TABLE `menu`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `users`

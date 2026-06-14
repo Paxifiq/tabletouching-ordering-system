@@ -29,7 +29,7 @@ const CartSidebar = ({ cart, onUpdate, onRemove, total, onCheckout }) => {
           <span>Total</span>
           <strong>{currency(total)}</strong>
         </div>
-        <button className="primary-button" onClick={onCheckout} disabled={cart.length === 0}>Checkout</button>
+        <button className="primary-button" onClick={onCheckout} disabled={cart.length === 0}>Place Order</button>
       </div>
     </aside>
   );

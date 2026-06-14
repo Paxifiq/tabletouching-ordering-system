@@ -555,7 +555,7 @@ function App() {
         <div className="hero-panel">
           <p>Total in cart</p>
           <strong>{currency(cartTotal)}</strong>
-          <button className="primary-button" onClick={() => setShowCheckout(true)} disabled={cart.length === 0}>Checkout</button>
+          <button className="primary-button" onClick={() => setShowCheckout(true)} disabled={cart.length === 0}>Place Order</button>
         </div>
       </header>
 
